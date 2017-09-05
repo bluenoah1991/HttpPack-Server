@@ -1,0 +1,25 @@
+{
+  "name": "httppack-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src -d lib -s",
+    "test": "node test.js"
+  },
+  "author": "CodeMeow5",
+  "license": "ISC",
+  "dependencies": {
+    "babel-preset-env": "^1.6.0",
+    "babel-register": "^6.26.0",
+    "bluebird": "^3.5.0",
+    "lodash": "^4.17.4",
+    "moment": "^2.18.1",
+    "redis": "^2.8.0"
+  },
+  "devDependencies": {
+    "kcors": "^2.2.1",
+    "koa": "^2.3.0",
+    "koa-better-body": "^3.0.4"
+  }
+}
