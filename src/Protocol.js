@@ -77,7 +77,6 @@ export class Packet{
             this.remainingLength = payload.length;
         }
         this.totalLength = 5 + this.remainingLength;
-        this.confirm = false;
         this.retryTimes = 0;
         this.timestamp = 0;
         this.buffer = null;

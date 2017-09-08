@@ -91,8 +91,7 @@ export default class Database{
 
         // Buffer mode
         _.assign(options, {
-            return_buffers: true,
-            detect_buffers: true
+            return_buffers: true
         });
 
         this.client = redis.createClient(options);
