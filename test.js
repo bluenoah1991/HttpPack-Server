@@ -23,9 +23,11 @@ app
                     hp.commit('user1', new Buffer('roger1', 'utf-8'), 1);
                     hp.commit('user1', new Buffer('roger2', 'utf-8'), 2);
                 }
-            }).then(function(respondBody){
-                ctx.response.body = respondBody;
-                return next();
+            }).then(function(){
+                return hp.generateBody('user1').then(function(respondBody){
+                    ctx.response.body = respondBody;
+                    return next();
+                });
             });
         });
     });

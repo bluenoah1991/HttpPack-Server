@@ -95,23 +95,23 @@ export default class HttpPack{
         let waitHandles = _.map(packets, function(packet){
             return this.handlePacket(scope, packet, callback);
         }.bind(this));
+        return Promise.all(waitHandles);
+    }
 
-        // build response body
-        return Promise.all(waitHandles).then(function(){
-            let respondPackets = this.db.unconfirmedPacket(scope, 5);
-            return respondPackets.then(function(packets){
-                let waitHandles = _.map(packets, function(packet){
-                    let retryPacket = this.generateRetryPacket(packet);
-                    if(retryPacket != undefined){
-                        return this.db.savePacket(scope, retryPacket).then(function(){
-                            return packet;
-                        });
-                    }
-                    return packet;
-                }.bind(this));
-                return Promise.all(waitHandles).then(function(packets){
-                    return this.combinePacket(packets);
-                }.bind(this));
+    generateBody(scope){
+        let respondPackets = this.db.unconfirmedPacket(scope, 5);
+        return respondPackets.then(function(packets){
+            let waitHandles = _.map(packets, function(packet){
+                let retryPacket = this.generateRetryPacket(packet);
+                if(retryPacket != undefined){
+                    return this.db.savePacket(scope, retryPacket).then(function(){
+                        return packet;
+                    });
+                }
+                return packet;
+            }.bind(this));
+            return Promise.all(waitHandles).then(function(packets){
+                return this.combinePacket(packets);
             }.bind(this));
         }.bind(this));
     }
