@@ -120,10 +120,10 @@ export default class HttpPack{
         if(typeof payload == 'string'){
             payload = new Buffer(payload, 'utf-8');
         }
-        this.db.generateId(scope).then(function(id){
+        return this.db.generateId(scope).then(function(id){
             let packet = Protocol.Encode(
                 Protocol.MSG_TYPE_SEND, qos, 0, id, payload);
-            this.db.savePacket(scope, packet);
+            return this.db.savePacket(scope, packet);
         }.bind(this));
     }
 }
