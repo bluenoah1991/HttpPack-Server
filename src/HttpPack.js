@@ -6,7 +6,7 @@ import * as Protocol from './Protocol';
 
 export default class HttpPack{
     constructor(options){
-        this.db = new Database(options);
+        this.storage = new Database(options);
     }
 
     handlePacket(scope, packet, callback){
@@ -16,32 +16,36 @@ export default class HttpPack{
                 return null;
             } else if(packet.qos == Protocol.QoS1){
                 let replyPacket = Protocol.Encode(Protocol.MSG_TYPE_ACK, Protocol.QoS0, 0, packet.identifier);
-                return this.db.savePacket(scope, replyPacket).then(function(){
+                replyPacket.timestamp = moment().unix();
+                return this.storage.savePacket(scope, replyPacket).then(function(){
                     callback(scope, packet.payload);
                 }.bind(this));
             } else if(packet.qos == Protocol.QoS2){
-                return this.db.receivePacket(scope, packet.identifier, packet.payload).then(function(){
+                return this.storage.receivePacket(scope, packet.identifier, packet.payload).then(function(){
                     let replyPacket = Protocol.Encode(Protocol.MSG_TYPE_RECEIVED, Protocol.QoS0, 0, packet.identifier);
-                    return this.db.savePacket(scope, replyPacket);
+                    replyPacket.timestamp = moment().unix();
+                    return this.storage.savePacket(scope, replyPacket);
                 }.bind(this));
             }
         } else if(packet.msgType == Protocol.MSG_TYPE_ACK){
-            return this.db.confirmPacket(scope, packet.identifier);
+            return this.storage.confirmPacket(scope, packet.identifier);
         } else if(packet.msgType == Protocol.MSG_TYPE_RECEIVED){
-            return this.db.confirmPacket(scope, packet.identifier).then(function(){
+            return this.storage.confirmPacket(scope, packet.identifier).then(function(){
                 let replyPacket = Protocol.Encode(Protocol.MSG_TYPE_RELEASE, Protocol.QoS1, 0, packet.identifier);
-                return this.db.savePacket(scope, replyPacket);
+                replyPacket.timestamp = moment().unix();
+                return this.storage.savePacket(scope, replyPacket);
             }.bind(this));      
         } else if(packet.msgType == Protocol.MSG_TYPE_RELEASE){
-            return this.db.releasePacket(scope, packet.identifier).then(function(payload){
+            return this.storage.releasePacket(scope, packet.identifier).then(function(payload){
                 if(payload != undefined){
                     callback(scope, payload);
                 }
                 let replyPacket = Protocol.Encode(Protocol.MSG_TYPE_COMPLETED, Protocol.QoS0, 0, packet.identifier);
-                return this.db.savePacket(scope, replyPacket);
+                replyPacket.timestamp = moment().unix();
+                return this.storage.savePacket(scope, replyPacket);
             }.bind(this));
         } else if(packet.msgType == Protocol.MSG_TYPE_COMPLETED){
-            return this.db.confirmPacket(scope, packet.identifier);
+            return this.storage.confirmPacket(scope, packet.identifier);
         }
     }
 
@@ -99,12 +103,12 @@ export default class HttpPack{
     }
 
     generateBody(scope){
-        let respondPackets = this.db.unconfirmedPacket(scope, 5);
+        let respondPackets = this.storage.unconfirmedPacket(scope, 5);
         return respondPackets.then(function(packets){
             let waitHandles = _.map(packets, function(packet){
                 let retryPacket = this.generateRetryPacket(packet);
                 if(retryPacket != undefined){
-                    return this.db.savePacket(scope, retryPacket).then(function(){
+                    return this.storage.savePacket(scope, retryPacket).then(function(){
                         return packet;
                     });
                 }
@@ -120,10 +124,11 @@ export default class HttpPack{
         if(typeof payload == 'string'){
             payload = new Buffer(payload, 'utf-8');
         }
-        return this.db.generateId(scope).then(function(id){
+        return this.storage.generateId(scope).then(function(id){
             let packet = Protocol.Encode(
                 Protocol.MSG_TYPE_SEND, qos, 0, id, payload);
-            return this.db.savePacket(scope, packet);
+            packet.timestamp = moment().unix();
+            return this.storage.savePacket(scope, packet);
         }.bind(this));
     }
 }
